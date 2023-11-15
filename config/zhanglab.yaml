@@ -1,0 +1,36 @@
+results_path: results
+data_path: data
+
+imagesize: 256
+max_normal: 500
+abnormal_k: 16
+
+batch_size: 8
+num_workers: 4
+
+normal_percentage: 0.5
+abnormal_percentage: 0.2  #0.3
+
+backbone_name: densenet121
+layers_to_extract_from: [features.denseblock4]
+
+pretrain_embed_dimension: 1024
+target_embed_dimension: 1024
+
+preprocessing: mean
+aggregation: mean
+anomaly_scorer_num_nn: 5
+
+patchsize: 5
+patchscore: max
+patchoverlap: 0.0
+patchsize_aggregate: []
+
+meta_epochs: 100
+gan_epochs: 1
+dsc_layers: 1
+dsc_hidden: 1024
+dsc_margin: 0.5
+dsc_lr: 0.0002
+
+dsc_save_path: best_discriminator.pkl
