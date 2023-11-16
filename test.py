@@ -88,6 +88,7 @@ def main(args):
 
         discriminator_path=os.path.join(args.config.results_path,args.dataset_name,args.config.dsc_save_path)
         print("load discriminator path: {}".format(discriminator_path))
+
         WSCXR.discriminator.load_state_dict(torch.load(discriminator_path))
 
         if WSCXR.backbone.seed is not None:
@@ -99,7 +100,6 @@ def main(args):
 
         scores = np.array(scores)
         scores = (scores - np.min(scores)) / (np.max(scores) - np.min(scores)).tolist()
-
 
         results = wscxr.metrics.compute_imagewise_retrieval_metrics(scores, labels_gt)
         print("auroc: {}, acc: {}, f1: {}".format(results['auroc'], results['acc'], results['f1']))
@@ -236,7 +236,7 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=0)
 
     parser.add_argument("--dataset_name", default='zhanglab', type=str,
-                        choices=['zhanglab', 'chexpert12'])
+                        choices=['zhanglab', 'chexpert'])
 
     parser.add_argument("--faiss_on_gpu", type=bool, default=False)
     parser.add_argument("--faiss_num_workers", type=int, default=8)

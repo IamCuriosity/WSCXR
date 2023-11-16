@@ -399,18 +399,3 @@ class NearestNeighbourScorer(object):
                 self._detection_file(load_folder, prepend)
             )
 
-
-# if __name__ == '__main__':
-#
-#     backbone=load("coc_medium").cuda()
-#     print(backbone)
-#     device = set_torch_device([0])
-#
-#     model=NetworkFeatureAggregator(backbone,['network.0','network.2','network.4','network.6'],device).cuda()
-#     a=torch.ones((2,3,224,224)).cuda()
-#     outputs=model(a)
-#
-#     print(outputs['network.0'].shape)
-#     print(outputs['network.2'].shape)
-#     print(outputs['network.4'].shape)
-#     print(outputs['network.6'].shape)

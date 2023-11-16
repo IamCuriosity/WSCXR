@@ -39,7 +39,7 @@ def main(args):
 
     logger.info("args: {}".format(pprint.pformat(args)))
 
-    dataloader_dict =dataset(   os.path.join(args.config.data_path,args.dataset_name),
+    dataloader_dict = dataset(os.path.join(args.config.data_path,args.dataset_name),
                                 args.config.batch_size,
                                 args.config.imagesize,
                                 args.config.num_workers,
@@ -92,17 +92,16 @@ def main(args):
         PatchFeatureExtractor.anomaly_scorer.fit([normal_features])
         anomaly_scores = PatchFeatureExtractor.anomaly_scorer.predict([abnormal_features])[0]
 
+
         _,index=torch.topk(torch.from_numpy(anomaly_scores),
                            int(anomaly_scores.shape[0]*args.config.abnormal_percentage),
                            largest=True)
-
 
         abnormal_features=abnormal_features[index.numpy()]
 
         logger.info("abnormal_prototype shape:({},{}), normal_prototype shape:({},{})".
                     format(abnormal_features.shape[0],abnormal_features.shape[1],
                            normal_features.shape[0],normal_features.shape[1],))
-
 
         WSCXR = create_wscxr_instance(
             args.config.backbone_name,
@@ -178,6 +177,7 @@ def dataset(
             normal_only=False,
             seed=seed,
         )
+
         print("train_normal:{}, train_abnormal:{}, test:{}".
               format(len(train_normal_dataset),len(train_abnormal_dataset),len(test_dataset)))
 
@@ -264,6 +264,7 @@ def create_patch_feature_extractor_instance(
     return  get_feature_extractor
 
 
+
 def create_wscxr_instance(
     backbone_name,
     layers_to_extract_from,
@@ -326,7 +327,7 @@ if __name__ == "__main__":
     parser.add_argument("--gpu", type=int, default=[0])
     parser.add_argument("--seed", type=int, default=0)
 
-    parser.add_argument("--dataset_name", default='zhanglab', type=str,choices=['zhanglab','chexpert12'])
+    parser.add_argument("--dataset_name", default='zhanglab', type=str,choices=['zhanglab','chexpert'])
 
     parser.add_argument("--faiss_on_gpu", type=bool, default=False)
     parser.add_argument("--faiss_num_workers", type=int, default=8)
@@ -335,5 +336,4 @@ if __name__ == "__main__":
 
     with open(os.path.join("config", "{}.yaml".format(args.dataset_name))) as f:
         args.config = EasyDict(yaml.load(f, Loader=yaml.FullLoader))
-
     main(args)

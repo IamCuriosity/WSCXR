@@ -1,7 +1,6 @@
 import os
 import random
 from enum import Enum
-
 import PIL
 import torch
 from torchvision import transforms

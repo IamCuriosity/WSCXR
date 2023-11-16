@@ -3,13 +3,13 @@ data_path: data
 
 imagesize: 256
 max_normal: 500
-abnormal_k: 16
+abnormal_k: 4
 
 batch_size: 8
 num_workers: 4
 
 normal_percentage: 0.5
-abnormal_percentage: 0.2  #0.3
+abnormal_percentage: 0.2
 
 backbone_name: densenet121
 layers_to_extract_from: [features.denseblock4]

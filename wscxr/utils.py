@@ -124,56 +124,6 @@ def fix_seeds(seed, with_torch=True, with_cuda=True):
         torch.backends.cudnn.deterministic = True
 
 
-def compute_and_store_final_results(
-    results_path,
-    results,
-    row_names=None,
-    column_names=[
-        "Instance AUROC",
-        "Full Pixel AUROC",
-        "Full PRO",
-        "Anomaly Pixel AUROC",
-        "Anomaly PRO",
-    ],
-):
-    """Store computed results as CSV file.
-
-    Args:
-        results_path: [str] Where to store result csv.
-        results: [List[List]] List of lists containing results per dataset,
-                 with results[i][0] == 'dataset_name' and results[i][1:6] =
-                 [instance_auroc, full_pixelwisew_auroc, full_pro,
-                 anomaly-only_pw_auroc, anomaly-only_pro]
-    """
-    if row_names is not None:
-        assert len(row_names) == len(results), "#Rownames != #Result-rows."
-
-    mean_metrics = {}
-    for i, result_key in enumerate(column_names):
-        mean_metrics[result_key] = np.mean([x[i] for x in results])
-        LOGGER.info("{0}: {1:3.3f}".format(result_key, mean_metrics[result_key]))
-
-    savename = os.path.join(results_path, "results.csv")
-    with open(savename, "w") as csv_file:
-        csv_writer = csv.writer(csv_file, delimiter=",")
-        header = column_names
-        if row_names is not None:
-            header = ["Row Names"] + header
-
-        csv_writer.writerow(header)
-        for i, result_list in enumerate(results):
-            csv_row = result_list
-            if row_names is not None:
-                csv_row = [row_names[i]] + result_list
-            csv_writer.writerow(csv_row)
-        mean_scores = list(mean_metrics.values())
-        if row_names is not None:
-            mean_scores = ["Mean"] + mean_scores
-        csv_writer.writerow(mean_scores)
-
-    mean_metrics = {"mean_{0}".format(key): item for key, item in mean_metrics.items()}
-    return mean_metrics
-
 
 def create_logger(name, log_file, level=logging.INFO):
     log = logging.getLogger(name)
@@ -188,6 +138,7 @@ def create_logger(name, log_file, level=logging.INFO):
     log.addHandler(fh)
     log.addHandler(sh)
     return log
+
 
 def map_func(storage, location):
     return storage.cuda()

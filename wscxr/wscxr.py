@@ -15,7 +15,6 @@ from wscxr import metrics
 from wscxr import utils
 import numpy as np
 import sklearn
-from imblearn.over_sampling import RandomOverSampler
 
 
 def init_weight(m):
@@ -83,12 +82,12 @@ class Projection(torch.nn.Module):
         return x
 
 
+
 class WSCXR(torch.nn.Module):
     def __init__(self, device):
         """anomaly detection class."""
         super(WSCXR, self).__init__()
         self.device = device
-        self.ros = RandomOverSampler(random_state=42)
 
     def load(
             self,
@@ -178,6 +177,7 @@ class WSCXR(torch.nn.Module):
 
         self.dsc_save_path = dsc_save_path
 
+
     def embed(self, data):
         if isinstance(data, torch.utils.data.DataLoader):
             features = []
@@ -189,6 +189,7 @@ class WSCXR(torch.nn.Module):
                     features.append(self._embed(input_image))
             return features
         return self._embed(data)
+
 
     def _embed(self, images, detach=True, provide_patch_shapes=False):
         """Returns feature embeddings for images."""
@@ -245,57 +246,7 @@ class WSCXR(torch.nn.Module):
         features = self.forward_modules["preadapt_aggregator"](features)  # further pooling
         return features, patch_shapes
 
-    # def test(self, training_data, test_data):
-    #
-    #     ckpt_path = os.path.join(self.ckpt_dir, "models.ckpt")
-    #     if os.path.exists(ckpt_path):
-    #         state_dicts = torch.load(ckpt_path, map_location=self.device)
-    #         if "pretrained_enc" in state_dicts:
-    #             self.feature_enc.load_state_dict(state_dicts["pretrained_enc"])
-    #         if "pretrained_dec" in state_dicts:
-    #             self.feature_dec.load_state_dict(state_dicts["pretrained_dec"])
-    #
-    #     aggregator = {"scores": [], "segmentations": [], "features": []}
-    #     scores, segmentations, features, labels_gt, masks_gt = self.predict(test_data)
-    #     aggregator["scores"].append(scores)
-    #     aggregator["segmentations"].append(segmentations)
-    #     aggregator["features"].append(features)
-    #
-    #     scores = np.array(aggregator["scores"])
-    #     min_scores = scores.min(axis=-1).reshape(-1, 1)
-    #     max_scores = scores.max(axis=-1).reshape(-1, 1)
-    #     scores = (scores - min_scores) / (max_scores - min_scores)
-    #     scores = np.mean(scores, axis=0)
-    #
-    #     segmentations = np.array(aggregator["segmentations"])
-    #     min_scores = (
-    #         segmentations.reshape(len(segmentations), -1)
-    #         .min(axis=-1)
-    #         .reshape(-1, 1, 1, 1)
-    #     )
-    #     max_scores = (
-    #         segmentations.reshape(len(segmentations), -1)
-    #         .max(axis=-1)
-    #         .reshape(-1, 1, 1, 1)
-    #     )
-    #     segmentations = (segmentations - min_scores) / (max_scores - min_scores)
-    #     segmentations = np.mean(segmentations, axis=0)
-    #
-    #     anomaly_labels = [
-    #         x[1] != "good" for x in test_data.dataset.data_to_iterate
-    #     ]
-    #
-    #     auroc = metrics.compute_imagewise_retrieval_metrics(
-    #         scores, anomaly_labels
-    #     )["auroc"]
-    #
-    #     # Compute PRO score & PW Auroc for all images
-    #     pixel_scores = metrics.compute_pixelwise_retrieval_metrics(
-    #         segmentations, masks_gt
-    #     )
-    #     full_pixel_auroc = pixel_scores["auroc"]
-    #
-    #     return auroc, full_pixel_auroc
+
 
     def train_(self, training_data, test_data):
 
@@ -329,8 +280,8 @@ class WSCXR(torch.nn.Module):
                 self.logger.info("best image auroc: {:.4f}, best acc: {:.4f}, best f1: {:.4f},".format(best_record[0],
                                                                                                        best_record[1],
                                                                                                        best_record[2]))
-
         return best_record
+
 
     def _train_discriminator(self, input_data, epoch):
 
@@ -384,21 +335,22 @@ class WSCXR(torch.nn.Module):
                 pbar.set_description_str(pbar_str)
                 pbar.update(1)
 
+
     def create_fake_feats(self, true_feats):
         normal_Len = true_feats.shape[0]
         abnormal_Len = self.prototypes.shape[0]
         index = np.random.choice(list(range(abnormal_Len)), size=(normal_Len), replace=True)
-        # weights = (torch.rand(size=(normal_Len, 1)) * 0.7 + 0.3).to(self.device)  # [0.1,1.0]    
-        weights = torch.Tensor(0.5).to(self.device)
+        weights = (torch.rand(size=(normal_Len, 1)) * 0.9 + 0.1).to(self.device)  # [0.1,1.0]
         return true_feats * (1.0 - weights) + self.prototypes[index] * weights
+
 
     def create_fake_feats_overlapping(self, true_feats):
         normal_Len = true_feats.shape[0]
         abnormal_Len = self.prototypes.shape[0]
         k = math.ceil(normal_Len / abnormal_Len)
         fake_feats = self.prototypes.repeat((k, 1))
-
         return fake_feats
+
 
     def predict(self, data):
         if isinstance(data, torch.utils.data.DataLoader):
@@ -466,9 +418,11 @@ class WSCXR(torch.nn.Module):
 
         return list(image_scores), list(masks)
 
+
     @staticmethod
     def _params_file(filepath, prepend=""):
         return os.path.join(filepath, prepend + "params.pkl")
+
 
     def save_to_path(self, save_path: str, prepend: str = ""):
         self.anomaly_scorer.save(

@@ -7,7 +7,6 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 import tqdm
-
 import wscxr
 import wscxr.backbones
 import wscxr.common
@@ -63,7 +62,6 @@ class PatchFeatureExtractor(torch.nn.Module):
         preadapt_aggregator = wscxr.common.Aggregator(
             target_dim=target_embed_dimension
         )
-
         _ = preadapt_aggregator.to(self.device)
 
         self.forward_modules["preadapt_aggregator"] = preadapt_aggregator
@@ -105,9 +103,6 @@ class PatchFeatureExtractor(torch.nn.Module):
             features = self.forward_modules["feature_aggregator"](images)
 
         features = [features[layer] for layer in self.layers_to_extract_from]
-
-        # for feature in features:
-        #     print(feature.shape)
 
         features = [
             self.patch_maker.patchify(x, return_spatial_info=True) for x in features
@@ -241,6 +236,7 @@ class PatchFeatureExtractor(torch.nn.Module):
             masks = self.anomaly_segmentor.convert_to_segmentation(patch_scores)
 
         return [score for score in image_scores], [mask for mask in masks]
+
 
     @staticmethod
     def _params_file(filepath, prepend=""):
