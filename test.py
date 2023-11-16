@@ -9,10 +9,10 @@ import torch
 import wscxr.backbones
 import wscxr.common
 import wscxr.metrics
-import wscxr.patchcore
+import wscxr.feat_extractor
 import wscxr.sampler
 import wscxr.utils
-from wscxr.wscxr import SimpleNet
+from wscxr.wscxr import WSCXR
 from datetime import datetime
 from datasets.dataset import MedDataset,MedAbnormalDataset
 import tqdm
@@ -71,7 +71,7 @@ def main(args):
 
     with device_context:
 
-        SimpleNet = create_samplenet_instance(
+        WSCXR = create_wscxr_instance(
             args.config.backbone_name,
             args.config.layers_to_extract_from,
             args.config.pretrain_embed_dimension,
@@ -88,14 +88,14 @@ def main(args):
 
         discriminator_path=os.path.join(args.config.results_path,args.dataset_name,args.config.dsc_save_path)
         print("load discriminator path: {}".format(discriminator_path))
-        SimpleNet.discriminator.load_state_dict(torch.load(discriminator_path))
+        WSCXR.discriminator.load_state_dict(torch.load(discriminator_path))
 
-        if SimpleNet.backbone.seed is not None:
-            wscxr.utils.fix_seeds(SimpleNet.backbone.seed, device)
+        if WSCXR.backbone.seed is not None:
+            wscxr.utils.fix_seeds(WSCXR.backbone.seed, device)
 
         torch.cuda.empty_cache()
 
-        scores, segmentations, labels_gt, image_paths = SimpleNet.predict(dataloader_dict["test"])
+        scores, segmentations, labels_gt, image_paths = WSCXR.predict(dataloader_dict["test"])
 
         scores = np.array(scores)
         scores = (scores - np.min(scores)) / (np.max(scores) - np.min(scores)).tolist()
@@ -181,7 +181,7 @@ def dataset(
     return get_dataloaders
 
 
-def create_samplenet_instance(
+def create_wscxr_instance(
     backbone_name,
     layers_to_extract_from,
 
@@ -199,14 +199,14 @@ def create_samplenet_instance(
 
 ):
 
-    def get_simplenet(input_shape, device):
+    def get_wscxr(input_shape, device):
         backbone_seed = None
         backbone = wscxr.backbones.load(backbone_name)
         backbone.name, backbone.seed = backbone_name, backbone_seed
 
-        simplenet_inst = SimpleNet(device)
+        wscxr_inst = WSCXR(device)
 
-        simplenet_inst.load(
+        wscxr_inst.load(
                 backbone=backbone,
                 layers_to_extract_from=layers_to_extract_from,
                 device=device,
@@ -224,9 +224,9 @@ def create_samplenet_instance(
                 dsc_lr=dsc_lr,
             )
 
-        return simplenet_inst
+        return wscxr_inst
 
-    return get_simplenet
+    return get_wscxr
 
 
 if __name__ == "__main__":
@@ -236,7 +236,7 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=0)
 
     parser.add_argument("--dataset_name", default='zhanglab', type=str,
-                        choices=['zhanglab', 'chexpert5', 'chexpert12'])
+                        choices=['zhanglab', 'chexpert12'])
 
     parser.add_argument("--faiss_on_gpu", type=bool, default=False)
     parser.add_argument("--faiss_num_workers", type=int, default=8)

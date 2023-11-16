@@ -16,10 +16,10 @@ import wscxr.sampler
 LOGGER = logging.getLogger(__name__)
 
 
-class PatchCore(torch.nn.Module):
+class WSCXR(torch.nn.Module):
     def __init__(self, device):
-        """PatchCore anomaly detection class."""
-        super(PatchCore, self).__init__()
+
+        super(WSCXR, self).__init__()
         self.device = device
 
     def load(
@@ -154,7 +154,7 @@ class PatchCore(torch.nn.Module):
         return _detach(features)
 
     def fit(self, training_data):
-        """PatchCore training.
+        """WSCXR training.
 
         This function computes the embeddings of the training data and fills the
         memory bank of SPADE.
@@ -162,7 +162,7 @@ class PatchCore(torch.nn.Module):
         return self._fill_memory_bank(training_data)
 
     def _fill_memory_bank(self, input_data):
-        """Computes and sets the support features for SPADE."""
+
         _ = self.forward_modules.eval()
 
         def _image_to_features(input_image):
@@ -244,15 +244,15 @@ class PatchCore(torch.nn.Module):
 
     @staticmethod
     def _params_file(filepath, prepend=""):
-        return os.path.join(filepath, prepend + "patchcore_params.pkl")
+        return os.path.join(filepath, prepend + "wscxr_params.pkl")
 
 
     def save_to_path(self, save_path: str, prepend: str = "") -> None:
-        LOGGER.info("Saving PatchCore data.")
+        LOGGER.info("Saving WSCXR data.")
         self.anomaly_scorer.save(
             save_path, save_features_separately=False, prepend=prepend
         )
-        patchcore_params = {
+        wscxr_params = {
             "backbone.name": self.backbone.name,
             "layers_to_extract_from": self.layers_to_extract_from,
             "input_shape": self.input_shape,
@@ -267,7 +267,7 @@ class PatchCore(torch.nn.Module):
             "anomaly_scorer_num_nn": self.anomaly_scorer.n_nearest_neighbours,
         }
         with open(self._params_file(save_path, prepend), "wb") as save_file:
-            pickle.dump(patchcore_params, save_file, pickle.HIGHEST_PROTOCOL)
+            pickle.dump(wscxr_params, save_file, pickle.HIGHEST_PROTOCOL)
 
 
     def load_from_path(
@@ -277,15 +277,15 @@ class PatchCore(torch.nn.Module):
         nn_method: wscxr.common.FaissNN(False, 4),
         prepend: str = "",
     ) -> None:
-        LOGGER.info("Loading and initializing PatchCore.")
+        LOGGER.info("Loading and initializing WSCXR.")
         with open(self._params_file(load_path, prepend), "rb") as load_file:
-            patchcore_params = pickle.load(load_file)
-        patchcore_params["backbone"] = wscxr.backbones.load(
-            patchcore_params["backbone.name"]
+            wscxr_params = pickle.load(load_file)
+        wscxr_params["backbone"] = wscxr.backbones.load(
+            wscxr_params["backbone.name"]
         )
-        patchcore_params["backbone"].name = patchcore_params["backbone.name"]
-        del patchcore_params["backbone.name"]
-        self.load(**patchcore_params, device=device, nn_method=nn_method)
+        wscxr_params["backbone"].name = wscxr_params["backbone.name"]
+        del wscxr_params["backbone.name"]
+        self.load(**wscxr_params, device=device, nn_method=nn_method)
 
         self.anomaly_scorer.load(load_path, prepend)
 

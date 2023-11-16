@@ -12,11 +12,11 @@ from easydict import EasyDict
 import wscxr.backbones
 import wscxr.common
 import wscxr.metrics
-import wscxr.patchcore
+import wscxr.feat_extractor
 import wscxr.sampler
 import wscxr.utils
 from datasets.dataset import MedDataset, MedAbnormalDataset
-from wscxr.wscxr import SimpleNet
+from wscxr.wscxr import WSCXR
 from wscxr.utils import create_logger
 
 warnings.filterwarnings('ignore')
@@ -64,7 +64,7 @@ def main(args):
             device,
         )
 
-        PatchCore = create_patchcore_instance(
+        WSCXR = create_wscxr_instance(
                      args.config.backbone_name,
                      args.config.layers_to_extract_from,
                      args.config.pretrain_embed_dimension,
@@ -79,17 +79,17 @@ def main(args):
                      args.faiss_on_gpu,
                      args.faiss_num_workers)(imagesize, sampler, device)
 
-        if PatchCore.backbone.seed is not None:
-            wscxr.utils.fix_seeds(PatchCore.backbone.seed, device)
+        if WSCXR.backbone.seed is not None:
+            wscxr.utils.fix_seeds(WSCXR.backbone.seed, device)
 
         torch.cuda.empty_cache()
 
-        normal_features = PatchCore.fit(dataloader_dict["train_normal"])
-        PatchCore.featuresampler = wscxr.sampler.IdentitySampler()
-        abnormal_features = PatchCore.fit(dataloader_dict["train_abnormal"])
+        normal_features = WSCXR.fit(dataloader_dict["train_normal"])
+        WSCXR.featuresampler = wscxr.sampler.IdentitySampler()
+        abnormal_features = WSCXR.fit(dataloader_dict["train_abnormal"])
 
-        PatchCore.anomaly_scorer.fit([normal_features])
-        anomaly_scores = PatchCore.anomaly_scorer.predict([abnormal_features])[0]
+        WSCXR.anomaly_scorer.fit([normal_features])
+        anomaly_scores = WSCXR.anomaly_scorer.predict([abnormal_features])[0]
 
         _,index=torch.topk(torch.from_numpy(anomaly_scores),
                            int(anomaly_scores.shape[0]*args.config.abnormal_percentage),
@@ -103,7 +103,7 @@ def main(args):
                            normal_features.shape[0],normal_features.shape[1],))
 
 
-        SimpleNet = create_samplenet_instance(
+        WSCXR = create_samplenet_instance(
             args.config.backbone_name,
             args.config.layers_to_extract_from,
 
@@ -121,12 +121,12 @@ def main(args):
             os.path.join(run_save_path ,args.config.dsc_save_path),
         )(imagesize, device)
 
-        if SimpleNet.backbone.seed is not None:
-            wscxr.utils.fix_seeds(SimpleNet.backbone.seed, device)
+        if WSCXR.backbone.seed is not None:
+            wscxr.utils.fix_seeds(WSCXR.backbone.seed, device)
 
         torch.cuda.empty_cache()
 
-        i_auroc, p_auroc, pro_auroc = SimpleNet.train_(dataloader_dict["train_normal"], dataloader_dict["test"])
+        i_auroc, p_auroc, pro_auroc = WSCXR.train_(dataloader_dict["train_normal"], dataloader_dict["test"])
         logger.info("best i_auroc: {}, best i_acc: {}, i_f1: {}".format(i_auroc, p_auroc, pro_auroc))
 
 
@@ -220,7 +220,7 @@ def dataset(
 
 
 
-def create_patchcore_instance(
+def create_wscxr_instance(
     backbone_name,
     layers_to_extract_from,
     pretrain_embed_dimension,
@@ -236,7 +236,7 @@ def create_patchcore_instance(
     faiss_num_workers,
 ):
 
-    def get_patchcore(input_shape, sampler, device):
+    def get_wscxr(input_shape, sampler, device):
         backbone_seed = None
 
         backbone = wscxr.backbones.load(backbone_name)
@@ -244,8 +244,8 @@ def create_patchcore_instance(
 
         nn_method = wscxr.common.FaissNN(faiss_on_gpu, faiss_num_workers)
 
-        patchcore_instance = wscxr.patchcore.PatchCore(device)
-        patchcore_instance.load(
+        wscxr_instance = wscxr.wscxr.WSCXR(device)
+        wscxr_instance.load(
                 backbone=backbone,
                 layers_to_extract_from=layers_to_extract_from,
                 device=device,
@@ -258,9 +258,9 @@ def create_patchcore_instance(
                 nn_method=nn_method,
             )
 
-        return patchcore_instance
+        return wscxr_instance
 
-    return  get_patchcore
+    return  get_wscxr
 
 
 def create_samplenet_instance(
@@ -285,14 +285,14 @@ def create_samplenet_instance(
     dsc_save_path,
 ):
 
-    def get_simplenet(input_shape, device):
+    def get_wscxr(input_shape, device):
         backbone_seed = None
         backbone = wscxr.backbones.load(backbone_name)
         backbone.name, backbone.seed = backbone_name, backbone_seed
 
-        simplenet_inst = SimpleNet(device)
+        wscxr_inst = WSCXR(device)
 
-        simplenet_inst.load(
+        wscxr_inst.load(
                 backbone=backbone,
                 layers_to_extract_from=layers_to_extract_from,
                 device=device,
@@ -314,9 +314,9 @@ def create_samplenet_instance(
                 dsc_lr=dsc_lr,
 
             )
-        return simplenet_inst
+        return wscxr_inst
 
-    return get_simplenet
+    return get_wscxr
 
 
 if __name__ == "__main__":
@@ -325,7 +325,7 @@ if __name__ == "__main__":
     parser.add_argument("--gpu", type=int, default=[0])
     parser.add_argument("--seed", type=int, default=0)
 
-    parser.add_argument("--dataset_name", default='zhanglab', type=str,choices=['zhanglab','chexpert5','chexpert12'])
+    parser.add_argument("--dataset_name", default='zhanglab', type=str,choices=['zhanglab','chexpert12'])
 
     parser.add_argument("--faiss_on_gpu", type=bool, default=False)
     parser.add_argument("--faiss_num_workers", type=int, default=8)

@@ -355,7 +355,7 @@ class WSCXR(torch.nn.Module):
                     img = img.to(torch.float).to(self.device)
 
                     true_feats = self._embed(img)[0]
-                    fake_feats = self.create_fake_feats_overlapping(true_feats)
+                    fake_feats = self.create_fake_feats(true_feats)
 
                     scores = self.discriminator(torch.cat([true_feats, fake_feats]))
 
