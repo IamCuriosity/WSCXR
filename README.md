@@ -18,8 +18,8 @@ $ pip install -r requirements.txt
 ```  
 ### Data preparation 
 Download the following datasets:
-- **ZhangLab  [[Baidu Cloud]]() or [[Google Drive]]()**  
-- **CheXpert [[Baidu Cloud]]() or [[Google Drive]]()**  
+- **ZhangLab  [[Baidu Cloud]](https://pan.baidu.com/s/1ZVm3qHcSpXel5Zk0CDbHQA?pwd=dxed) or [[Google Drive]](https://drive.google.com/file/d/17hAUZXskqd3eVc-ZRkgfn1Rd2HoP6izh/view?usp=sharing)**  
+- **CheXpert [[Baidu Cloud]](https://pan.baidu.com/s/1s__UjdSHS6LnYmITSBuMGA?pwd=v8lg) or [[Google Drive]](https://drive.google.com/file/d/14F4DNFUAGdxPKToIuX-ytY0gft2nn8d-/view?usp=sharing)**  
 
 Unzip them to the `data`. Please refer to [data/README](data/README.md).  
   
