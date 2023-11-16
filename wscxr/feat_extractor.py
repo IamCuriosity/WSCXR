@@ -16,10 +16,10 @@ import wscxr.sampler
 LOGGER = logging.getLogger(__name__)
 
 
-class WSCXR(torch.nn.Module):
+class PatchFeatureExtractor(torch.nn.Module):
     def __init__(self, device):
 
-        super(WSCXR, self).__init__()
+        super(PatchFeatureExtractor, self).__init__()
         self.device = device
 
     def load(
@@ -154,7 +154,7 @@ class WSCXR(torch.nn.Module):
         return _detach(features)
 
     def fit(self, training_data):
-        """WSCXR training.
+        """PatchFeatureExtractor training.
 
         This function computes the embeddings of the training data and fills the
         memory bank of SPADE.
@@ -244,15 +244,15 @@ class WSCXR(torch.nn.Module):
 
     @staticmethod
     def _params_file(filepath, prepend=""):
-        return os.path.join(filepath, prepend + "wscxr_params.pkl")
+        return os.path.join(filepath, prepend + "feature_exetractor_params.pkl")
 
 
     def save_to_path(self, save_path: str, prepend: str = "") -> None:
-        LOGGER.info("Saving WSCXR data.")
+        LOGGER.info("Saving PatchFeatureExtractor data.")
         self.anomaly_scorer.save(
             save_path, save_features_separately=False, prepend=prepend
         )
-        wscxr_params = {
+        feature_exetractor_params = {
             "backbone.name": self.backbone.name,
             "layers_to_extract_from": self.layers_to_extract_from,
             "input_shape": self.input_shape,
@@ -267,7 +267,7 @@ class WSCXR(torch.nn.Module):
             "anomaly_scorer_num_nn": self.anomaly_scorer.n_nearest_neighbours,
         }
         with open(self._params_file(save_path, prepend), "wb") as save_file:
-            pickle.dump(wscxr_params, save_file, pickle.HIGHEST_PROTOCOL)
+            pickle.dump(feature_exetractor_params, save_file, pickle.HIGHEST_PROTOCOL)
 
 
     def load_from_path(
@@ -277,15 +277,15 @@ class WSCXR(torch.nn.Module):
         nn_method: wscxr.common.FaissNN(False, 4),
         prepend: str = "",
     ) -> None:
-        LOGGER.info("Loading and initializing WSCXR.")
+        LOGGER.info("Loading and initializing PatchFeatureExtractor.")
         with open(self._params_file(load_path, prepend), "rb") as load_file:
-            wscxr_params = pickle.load(load_file)
-        wscxr_params["backbone"] = wscxr.backbones.load(
-            wscxr_params["backbone.name"]
+            feature_exetractor_params = pickle.load(load_file)
+        feature_exetractor_params["backbone"] = wscxr.backbones.load(
+            feature_exetractor_params["backbone.name"]
         )
-        wscxr_params["backbone"].name = wscxr_params["backbone.name"]
-        del wscxr_params["backbone.name"]
-        self.load(**wscxr_params, device=device, nn_method=nn_method)
+        feature_exetractor_params["backbone"].name = feature_exetractor_params["backbone.name"]
+        del feature_exetractor_params["backbone.name"]
+        self.load(**feature_exetractor_params, device=device, nn_method=nn_method)
 
         self.anomaly_scorer.load(load_path, prepend)
 

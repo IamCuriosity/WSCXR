@@ -17,6 +17,7 @@ import wscxr.sampler
 import wscxr.utils
 from datasets.dataset import MedDataset, MedAbnormalDataset
 from wscxr.wscxr import WSCXR
+from wscxr.feat_extractor import PatchFeatureExtractor
 from wscxr.utils import create_logger
 
 warnings.filterwarnings('ignore')
@@ -64,7 +65,7 @@ def main(args):
             device,
         )
 
-        WSCXR = create_wscxr_instance(
+        PatchFeatureExtractor = create_patch_feature_extractor_instance(
                      args.config.backbone_name,
                      args.config.layers_to_extract_from,
                      args.config.pretrain_embed_dimension,
@@ -79,17 +80,17 @@ def main(args):
                      args.faiss_on_gpu,
                      args.faiss_num_workers)(imagesize, sampler, device)
 
-        if WSCXR.backbone.seed is not None:
-            wscxr.utils.fix_seeds(WSCXR.backbone.seed, device)
+        if PatchFeatureExtractor.backbone.seed is not None:
+            PatchFeatureExtractor.utils.fix_seeds(PatchFeatureExtractor.backbone.seed, device)
 
         torch.cuda.empty_cache()
 
-        normal_features = WSCXR.fit(dataloader_dict["train_normal"])
-        WSCXR.featuresampler = wscxr.sampler.IdentitySampler()
-        abnormal_features = WSCXR.fit(dataloader_dict["train_abnormal"])
+        normal_features = PatchFeatureExtractor.fit(dataloader_dict["train_normal"])
+        PatchFeatureExtractor.featuresampler = wscxr.sampler.IdentitySampler()
+        abnormal_features = PatchFeatureExtractor.fit(dataloader_dict["train_abnormal"])
 
-        WSCXR.anomaly_scorer.fit([normal_features])
-        anomaly_scores = WSCXR.anomaly_scorer.predict([abnormal_features])[0]
+        PatchFeatureExtractor.anomaly_scorer.fit([normal_features])
+        anomaly_scores = PatchFeatureExtractor.anomaly_scorer.predict([abnormal_features])[0]
 
         _,index=torch.topk(torch.from_numpy(anomaly_scores),
                            int(anomaly_scores.shape[0]*args.config.abnormal_percentage),
@@ -103,7 +104,7 @@ def main(args):
                            normal_features.shape[0],normal_features.shape[1],))
 
 
-        WSCXR = create_samplenet_instance(
+        WSCXR = create_wscxr_instance(
             args.config.backbone_name,
             args.config.layers_to_extract_from,
 
@@ -220,7 +221,7 @@ def dataset(
 
 
 
-def create_wscxr_instance(
+def create_patch_feature_extractor_instance(
     backbone_name,
     layers_to_extract_from,
     pretrain_embed_dimension,
@@ -236,7 +237,7 @@ def create_wscxr_instance(
     faiss_num_workers,
 ):
 
-    def get_wscxr(input_shape, sampler, device):
+    def get_feature_extractor(input_shape, sampler, device):
         backbone_seed = None
 
         backbone = wscxr.backbones.load(backbone_name)
@@ -244,8 +245,8 @@ def create_wscxr_instance(
 
         nn_method = wscxr.common.FaissNN(faiss_on_gpu, faiss_num_workers)
 
-        wscxr_instance = wscxr.wscxr.WSCXR(device)
-        wscxr_instance.load(
+        feature_extractor_instance = wscxr.feat_extractor.PatchFeatureExtractor(device)
+        feature_extractor_instance.load(
                 backbone=backbone,
                 layers_to_extract_from=layers_to_extract_from,
                 device=device,
@@ -258,12 +259,12 @@ def create_wscxr_instance(
                 nn_method=nn_method,
             )
 
-        return wscxr_instance
+        return feature_extractor_instance
 
-    return  get_wscxr
+    return  get_feature_extractor
 
 
-def create_samplenet_instance(
+def create_wscxr_instance(
     backbone_name,
     layers_to_extract_from,
 
