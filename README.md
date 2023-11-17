@@ -1,6 +1,6 @@
 # WSCXR
 
-**💡 This is the official implementation of the paper "Weakly Supervised Anomaly Detection for Chest X-Ray Image"**.  
+**💡 This is the official implementation of the paper [["Weakly Supervised Anomaly Detection for Chest X-Ray Image"]](https://arxiv.org/abs/2311.09642)**.  
 
 
 WSCXR is a weakly supervised anomaly detection framework for Chest X-Ray (CXR) image. WSCXR can effectively leverage medical cues from few-shot real anomalous images for anomaly detection, thereby improving the model’s anomaly detection performance. Additionally, WSCXR employs a linear mixing strategy to augment the anomaly features, facilitating the training of anomaly detector with few-shot anomaly images. 
@@ -41,5 +41,12 @@ $ python  test.py --dataset_name zhanglab
 
 If this work is helpful to you, please cite it as:
 ```
-coming soon.
+@misc{ni2023weakly,
+      title={Weakly Supervised Anomaly Detection for Chest X-Ray Image}, 
+      author={Haoqi Ni and Ximiao Zhang and Min Xu and Ning Lang and Xiuzhuang Zhou},
+      year={2023},
+      eprint={2311.09642},
+      archivePrefix={arXiv},
+      primaryClass={eess.IV}
+}
 ```
